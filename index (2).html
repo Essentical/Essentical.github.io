@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Framenaut: an early-stage humanoid robot project</title>
+<meta name="description" content="Framenaut is a student-built humanoid robot in its early stages: low cost, sturdy and safe around people. Not a product, nothing is for sale.">
+<meta name="theme-color" content="#EEE5D4">
+<meta property="og:title" content="Framenaut">
+<meta property="og:description" content="A student-built humanoid robot in its early stages. Low cost, sturdy and safe around people.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%235A3E2B'/%3E%3Cpath d='M11 8v16M11 8h11M11 16h8' stroke='%23EEE5D4' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#EEE5D4; --sheet:#F6F0E3; --ink:#3B2A1F; --text:#4A3526; --muted:#6F5B46;
+    --line:#CDBBA0; --rod:#5A3E2B; --live:#2F6F6A; --grid:rgba(90,62,43,.075);
+    --notice-bg:#3B2A1F; --notice-fg:#F1E8D6;
+    --band:#2E2118; --band-ink:#F2E7D3; --band-muted:#BDAA90; --band-line:#5A4636; --band-rod:#E3CBA7; --band-live:#82C7BC;
+    --hover:rgba(90,62,43,.06);
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#17100C; --sheet:#241A14; --ink:#F0E5D0; --text:#DDD0BA; --muted:#B3A088;
+      --line:#4B3B2E; --rod:#D8BE9B; --live:#7FC2B8; --grid:rgba(240,229,208,.05);
+      --notice-bg:#F0E5D0; --notice-fg:#241A14;
+      --band:#110B08; --band-ink:#F2E7D3; --band-muted:#B3A088; --band-line:#4B3B2E; --band-rod:#E3CBA7; --band-live:#82C7BC;
+      --hover:rgba(240,229,208,.06);
+      color-scheme:dark;
+    }
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:"Avenir Next","Segoe UI Variable Text","Segoe UI","Helvetica Neue",Arial,sans-serif;
+    font-size:1.0625rem; line-height:1.65; font-variant-numeric:tabular-nums;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--ink);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.22em}
+  a:hover{text-decoration-thickness:2px}
+  a:focus-visible{outline:2px solid var(--live);outline-offset:3px;border-radius:2px}
+  .skip{position:absolute;left:-999px;top:8px;background:var(--ink);color:var(--sheet);padding:8px 12px;z-index:10}
+  .skip:focus{left:8px}
+
+  .notice{background:var(--notice-bg);color:var(--notice-fg);text-align:center;font-size:.9375rem;padding:10px 20px}
+
+  .sheet{--pad:clamp(22px,5vw,64px);max-width:1160px;margin:26px auto 56px;background:var(--sheet);
+    border:1px solid var(--ink);box-shadow:0 0 0 7px var(--bg),0 0 0 8px var(--line);padding:0 var(--pad)}
+  @media (max-width:1230px){.sheet{margin:20px 14px 40px;box-shadow:none}}
+
+  .bar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px 28px;
+    padding:22px 0;border-bottom:1px solid var(--line);position:relative;z-index:1}
+  .brand{font-weight:600;color:var(--ink);text-decoration:none;letter-spacing:.01em}
+  .bar nav{display:flex;flex-wrap:wrap;gap:6px 26px;font-size:.9375rem}
+  .bar nav a{color:var(--muted);text-decoration:none}
+  .bar nav a:hover{color:var(--ink);text-decoration:underline}
+
+  /* Hero: a drafting grid that fades out, a wordmark with a dimension line */
+  .hero{position:relative;margin:0 calc(-1 * var(--pad));padding:clamp(56px,9vw,112px) var(--pad) clamp(52px,7vw,92px);
+    display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:56px;align-items:end;
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:56px 56px;background-position:-1px -1px}
+  .hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(to bottom,transparent 0,transparent 35%,var(--sheet) 96%)}
+  .hero>*{position:relative}
+  .mark{display:inline-block;max-width:100%}
+  h1{font-weight:300;color:var(--ink);font-size:clamp(3.4rem,9.2vw,7.6rem);line-height:.95;letter-spacing:-.045em;margin-left:-.04em}
+  .dim{position:relative;height:13px;margin-top:20px}
+  .dim::before{content:"";position:absolute;left:0;right:0;top:6px;height:1px;background:var(--muted);transform-origin:left;animation:draw 1.3s .15s cubic-bezier(.22,.8,.2,1) both}
+  .dim::after{content:"";position:absolute;left:0;right:0;top:0;bottom:0;border-left:1px solid var(--muted);border-right:1px solid var(--muted);transform-origin:left;animation:draw 1.3s .15s cubic-bezier(.22,.8,.2,1) both}
+  .dim span{position:absolute;left:50%;top:-3px;transform:translateX(-50%);background:var(--sheet);padding:0 12px;
+    font-size:.8125rem;line-height:19px;color:var(--muted);white-space:nowrap;z-index:1;animation:fade .8s 1.1s both}
+  @keyframes draw{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  @media (prefers-reduced-motion:reduce){.dim::before,.dim::after,.dim span{animation:none}}
+  .lead{font-size:clamp(1.3rem,2.3vw,1.7rem);line-height:1.35;color:var(--ink);max-width:24em;margin-top:34px;font-weight:400}
+  .hero p.copy{max-width:34em;margin-top:18px}
+  .links{display:flex;flex-wrap:wrap;gap:10px 28px;margin-top:30px;font-weight:600}
+
+  .block{border:1px solid var(--ink);background:var(--sheet)}
+  .block h2{font-size:.9375rem;font-weight:600;color:var(--ink);padding:12px 16px;border-bottom:1px solid var(--ink)}
+  .block dl{display:grid;grid-template-columns:auto 1fr}
+  .block dt,.block dd{padding:11px 16px;border-top:1px solid var(--line);font-size:.9688rem;line-height:1.4}
+  .block dt:first-of-type,.block dt:first-of-type+dd{border-top:0}
+  .block dt{color:var(--muted);padding-right:20px}
+  .block dd{color:var(--ink)}
+  .block dd.strong{font-weight:600}
+
+  .row{display:grid;grid-template-columns:190px minmax(0,1fr);gap:48px;padding:68px 0;border-top:1px solid var(--line)}
+  .row>h2{font-size:1rem;font-weight:600;color:var(--ink);align-self:start;position:sticky;top:28px;line-height:1.4}
+  h3{font-size:clamp(1.6rem,3vw,2.3rem);font-weight:300;color:var(--ink);line-height:1.2;letter-spacing:-.025em;max-width:20em}
+  .body>*+*{margin-top:22px}
+  .fine{font-size:.9375rem;color:var(--muted);max-width:40rem}
+
+  /* Approach */
+  .triad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:40px;border-top:2px solid var(--ink)}
+  .triad>div{padding:24px 26px 6px 0}
+  .triad>div+div{padding-left:26px;border-left:1px solid var(--line)}
+  .triad b{display:block;font-size:1.5rem;font-weight:300;letter-spacing:-.02em;color:var(--ink);line-height:1.2;margin-bottom:10px}
+  .triad p{font-size:.9688rem;color:var(--text)}
+  .reuse{max-width:40rem}
+
+  /* Status band */
+  .band{margin:0 calc(-1 * var(--pad));padding:clamp(60px,8vw,104px) var(--pad);background:var(--band);color:var(--band-ink);
+    --t-line:var(--band-line);--t-fill:var(--band-rod);--t-tick:var(--band-muted)}
+  .band .label{font-size:1rem;font-weight:600;color:var(--band-ink)}
+  .band h3{color:var(--band-ink);margin-top:14px;max-width:17em;font-size:clamp(1.9rem,4vw,3.3rem);letter-spacing:-.03em}
+
+  .path{list-style:none;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:56px}
+  .path li{position:relative;padding:38px 22px 0 0}
+  .path li::before{content:"";position:absolute;top:8px;left:26px;right:8px;border-top:2px dashed var(--band-line)}
+  .path li.done::before{border-top:2px solid var(--band-rod)}
+  .path li:last-child::before{display:none}
+  .node{position:absolute;left:0;top:0;width:18px;height:18px;border-radius:50%;border:2px solid var(--band-line);background:var(--band)}
+  .done .node{background:var(--band-rod);border-color:var(--band-rod)}
+  .now .node{border-color:var(--band-live);box-shadow:inset 0 0 0 3px var(--band),inset 0 0 0 9px var(--band-live)}
+  .path strong{display:block;color:var(--band-ink);font-weight:600;line-height:1.35}
+  .state{display:block;margin-top:4px;font-size:.875rem;color:var(--band-muted)}
+  .now .state{color:var(--band-live);font-weight:600}
+  .path p{font-size:.9375rem;color:var(--band-muted);margin-top:8px;line-height:1.5}
+
+  .results{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:48px;margin-top:84px;padding-top:44px;border-top:1px solid var(--band-line)}
+  .rl{color:var(--band-muted);font-size:.9688rem}
+  .rv{display:flex;align-items:baseline;gap:4px;margin-top:6px;color:var(--band-ink);line-height:1}
+  .num{font-size:clamp(3.4rem,6.4vw,5.4rem);font-weight:300;letter-spacing:-.05em}
+  .pc{font-size:1.6rem;font-weight:300;color:var(--band-muted)}
+  .track{position:relative;height:2px;background:var(--t-line);margin:22px 5px 8px 0}
+  .track::after{content:"";position:absolute;right:0;top:-5px;width:2px;height:12px;background:var(--t-tick)}
+  .track i{position:absolute;left:0;top:0;height:2px;width:var(--v);background:var(--t-fill)}
+  .track i::after{content:"";position:absolute;right:-5px;top:-4px;width:10px;height:10px;border-radius:50%;background:var(--t-fill)}
+  .scale{display:flex;justify-content:space-between;font-size:.8125rem;color:var(--band-muted)}
+  .js .track i{width:0;transition:width 1.5s cubic-bezier(.22,.8,.2,1)}
+  .js .results.in .track i{width:var(--v)}
+  @media (prefers-reduced-motion:reduce){.js .track i{transition:none}}
+  .band .fine{color:var(--band-muted);margin-top:44px}
+  .band a{color:var(--band-ink)}
+  .band a:focus-visible{outline-color:var(--band-live)}
+
+  /* Openness */
+  .linkrows{list-style:none;margin-top:36px;border-bottom:1px solid var(--line)}
+  .linkrows a{display:grid;grid-template-columns:minmax(0,11rem) minmax(0,1fr);gap:20px;align-items:baseline;
+    padding:20px 0;border-top:1px solid var(--line);text-decoration:none;color:var(--text);transition:background .2s,box-shadow .2s}
+  .linkrows a:hover{background:var(--hover);box-shadow:-14px 0 0 var(--hover),14px 0 0 var(--hover)}
+  .linkrows .t{font-weight:600;color:var(--ink);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.22em}
+  .linkrows a:hover .t{text-decoration-thickness:2px}
+
+  .duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:56px}
+  .duo h3{font-size:1.5rem;font-weight:300;letter-spacing:-.02em}
+  .duo p{margin-top:12px}
+  .mail{font-size:clamp(1.1rem,2.2vw,1.45rem);font-weight:300;letter-spacing:-.01em;word-break:break-word}
+
+  footer{border-top:1px solid var(--ink);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0}
+  footer>div{padding:24px 24px 28px 0;font-size:.9063rem;line-height:1.5;color:var(--muted)}
+  footer>div+div{padding-left:24px;border-left:1px solid var(--line)}
+  footer b{display:block;color:var(--ink);font-weight:600}
+
+  @media (max-width:960px){
+    .path{grid-template-columns:1fr;margin-top:44px}
+    .path li{padding:0 0 32px 44px}
+    .path li:last-child{padding-bottom:0}
+    .path li::before{top:24px;bottom:-2px;left:8px;right:auto;border-top:0;border-left:2px dashed var(--band-line)}
+    .path li.done::before{border-left:2px solid var(--band-rod)}
+    .node{top:3px}
+    .results{grid-template-columns:1fr;gap:40px;margin-top:56px}
+  }
+  @media (max-width:860px){
+    .hero{grid-template-columns:1fr;gap:44px}
+    .row{grid-template-columns:1fr;gap:18px;padding:52px 0}
+    .row>h2{position:static}
+    .triad{grid-template-columns:1fr}
+    .triad>div,.triad>div+div{padding:22px 0 8px;border-left:0}
+    .triad>div+div{border-top:1px solid var(--line)}
+    .duo{grid-template-columns:1fr;gap:40px}
+    .linkrows a{grid-template-columns:1fr;gap:4px}
+    footer{grid-template-columns:1fr}
+    footer>div,footer>div+div{padding:16px 0;border-left:0;border-top:1px solid var(--line)}
+    footer>div:first-child{border-top:0}
+  }
+</style>
+<script>document.documentElement.classList.add('js')</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="notice" role="note">Early-stage project. Framenaut is not a product, and nothing here is for sale.</div>
+
+<div class="sheet">
+  <header class="bar">
+    <a class="brand" href="#top">Essentical</a>
+    <nav aria-label="Page sections">
+      <a href="#approach">Approach</a>
+      <a href="#status">Status</a>
+      <a href="#open">Openness</a>
+      <a href="#contact">Contact</a>
+      <a href="https://github.com/essentical/framenaut">GitHub</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <div>
+        <div class="mark">
+          <h1>Framenaut</h1>
+          <div class="dim" aria-hidden="true"><span>In development</span></div>
+        </div>
+        <p class="lead">A humanoid robot that stays cheap, tough and safe around people.</p>
+        <p class="copy">Framenaut is a student project in its early stages. This page follows the build as it grows, from the first frame to the first full movement.</p>
+        <p class="links">
+          <a href="#status">See where it stands</a>
+          <a href="https://github.com/essentical/framenaut">Follow the build on GitHub</a>
+        </p>
+      </div>
+
+      <aside class="block" aria-labelledby="blk">
+        <h2 id="blk">Project sheet</h2>
+        <dl>
+          <dt>Project</dt><dd>Framenaut</dd>
+          <dt>Maker</dt><dd>Essentical, a student in Switzerland</dd>
+          <dt>Stage</dt><dd>Early prototype</dd>
+          <dt>Availability</dt><dd class="strong">Not available</dd>
+          <dt>Updated</dt><dd>19 November 2026</dd>
+        </dl>
+      </aside>
+    </section>
+
+    <section class="row" id="approach">
+      <h2>Approach</h2>
+      <div class="body">
+        <h3>Three constraints decide everything.</h3>
+        <div class="triad">
+          <div><b>Low cost</b><p>Built on a student budget from off-the-shelf parts. A design choice that makes the robot harder to afford needs a very good reason.</p></div>
+          <div><b>Sturdy</b><p>Made to survive everyday handling, not only a clean workbench. Simple and repairable beats clever and fragile.</p></div>
+          <div><b>Safe around people</b><p>The robot is meant to interact with people, so it has to be gentle and predictable. Safety comes before strength.</p></div>
+        </div>
+        <p class="reuse">The first build is a humanoid, but the concept behind it is meant to carry over to any robot shape.</p>
+      </div>
+    </section>
+
+    <section class="band" id="status" aria-labelledby="status-h">
+      <div class="label" id="status-h">Status</div>
+      <h3>The arm frame is built. Movement testing is under way.</h3>
+
+      <ol class="path">
+        <li class="done"><span class="node" aria-hidden="true"></span><strong>Arm frame built</strong><span class="state">Done</span><p>The structure of the arm is complete.</p></li>
+        <li class="now"><span class="node" aria-hidden="true"></span><strong>Movement testing</strong><span class="state">In progress</span><p>Repeated test runs, scored against the project's own targets.</p></li>
+        <li><span class="node" aria-hidden="true"></span><strong>Arm connected to software</strong><span class="state">Planned</span></li>
+        <li><span class="node" aria-hidden="true"></span><strong>First full movement test</strong><span class="state">Planned</span></li>
+      </ol>
+
+      <div class="results" id="results">
+        <div class="res" style="--v:65%">
+          <div class="rl">Movement capability</div>
+          <div class="rv"><span class="num" data-to="65">65</span><span class="pc">%</span></div>
+          <div class="track"><i></i></div>
+          <div class="scale"><span>Start</span><span>Target</span></div>
+        </div>
+        <div class="res" style="--v:80%">
+          <div class="rl">Movement speed</div>
+          <div class="rv"><span class="num" data-to="80">80</span><span class="pc">%</span></div>
+          <div class="track"><i></i></div>
+          <div class="scale"><span>Start</span><span>Target</span></div>
+        </div>
+        <div class="res" style="--v:70%">
+          <div class="rl">Movement force</div>
+          <div class="rv"><span class="num" data-to="70">70</span><span class="pc">%</span></div>
+          <div class="track"><i></i></div>
+          <div class="scale"><span>Start</span><span>Target</span></div>
+        </div>
+      </div>
+      <p class="fine">Each measure is progress toward the project's own target, which is not published. Run-by-run results are in the <a href="https://github.com/essentical/framenaut/blob/main/LOG.md">build log</a>.</p>
+    </section>
+
+    <section class="row" id="open">
+      <h2>Openness</h2>
+      <div class="body">
+        <h3>Progress is public. The design is not, for now.</h3>
+        <p class="fine" style="font-size:1.0625rem;color:var(--text)">The parts list, the build log and the milestones are open for anyone to read. Detailed designs, code and build instructions stay private while the project is young.</p>
+        <ul class="linkrows">
+          <li><a href="https://github.com/essentical/framenaut/blob/main/PARTS.md"><span class="t">Parts list</span><span>What the robot is made of, and what is still needed.</span></a></li>
+          <li><a href="https://github.com/essentical/framenaut/blob/main/LOG.md"><span class="t">Build log</span><span>Dated progress notes and test results.</span></a></li>
+          <li><a href="https://github.com/essentical/framenaut/blob/main/ABOUT.md"><span class="t">About the project</span><span>What Framenaut is and why it exists.</span></a></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="row" id="contact">
+      <h2>Support</h2>
+      <div class="duo">
+        <div>
+          <h3>Supporters</h3>
+          <p>No supporters yet.</p>
+          <p class="fine">Companies that provide parts, samples or advice are credited here and in the repository, and they follow the progress through the build log.</p>
+        </div>
+        <div>
+          <h3>Contact</h3>
+          <p>Questions, advice, and offers of parts or samples for a student project are welcome.</p>
+          <p class="mail"><a href="mailto:essentical.work995@passmail.net">essentical.work995@passmail.net</a></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div><b>Framenaut</b>An early-stage project by Essentical.</div>
+    <div><b>Made in Switzerland</b>By a student, on a student budget.</div>
+    <div><b>All rights reserved</b>This page may be read, not copied or reused without permission. It sets no cookies and loads nothing from third parties.</div>
+  </footer>
+</div>
+
+<script>
+  (function(){
+    var box=document.getElementById('results');
+    if(!box) return;
+    var nums=[].slice.call(box.querySelectorAll('.num'));
+    var calm=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(!('IntersectionObserver' in window)||calm){box.classList.add('in');return;}
+    nums.forEach(function(n){n.textContent='0';});
+    function run(){
+      box.classList.add('in');
+      var t0=null,dur=1500;
+      function step(t){
+        if(t0===null)t0=t;
+        var p=Math.min((t-t0)/dur,1), e=1-Math.pow(1-p,3);
+        nums.forEach(function(n){n.textContent=Math.round(+n.dataset.to*e);});
+        if(p<1)requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){if(e.isIntersecting){io.disconnect();run();}});
+    },{threshold:.3});
+    io.observe(box);
+  })();
+</script>
+</body>
+</html>
